@@ -2,7 +2,7 @@
 import logging
 from .const import DOMAIN
 from homeassistant.components.switch import (
-    DEVICE_CLASS_SWITCH,
+    SwitchDeviceClass,
 )
 
 try:
@@ -82,7 +82,7 @@ class ChimeSwitch(SwitchEntity):
     @property
     def device_class(self):
         """Return the class of this device, from component DEVICE_CLASSES."""
-        return DEVICE_CLASS_SWITCH
+        return SwitchDeviceClass.SWITCH
 
     def update(self):
         """Get the latest data for the Switch and updates the states."""

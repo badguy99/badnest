@@ -11,24 +11,15 @@ from homeassistant.components.climate.const import (
     ATTR_TARGET_TEMP_LOW,
     FAN_AUTO,
     FAN_ON,
-    HVAC_MODE_AUTO,
-    HVAC_MODE_COOL,
-    HVAC_MODE_HEAT,
-    HVAC_MODE_OFF,
-    SUPPORT_FAN_MODE,
-    SUPPORT_PRESET_MODE,
-    SUPPORT_TARGET_TEMPERATURE,
-    SUPPORT_TARGET_TEMPERATURE_RANGE,
-    SUPPORT_TARGET_HUMIDITY,
     PRESET_ECO,
     PRESET_NONE,
-    CURRENT_HVAC_HEAT,
-    CURRENT_HVAC_IDLE,
-    CURRENT_HVAC_COOL,
+    HVACMode,
+    HVACAction,
+    ClimateEntityFeature
 )
 from homeassistant.const import (
     ATTR_TEMPERATURE,
-    TEMP_CELSIUS,
+    UnitOfTemperature
 )
 
 from .const import (
@@ -42,16 +33,16 @@ NEST_MODE_COOL = "cool"
 NEST_MODE_OFF = "off"
 
 MODE_HASS_TO_NEST = {
-    HVAC_MODE_AUTO: NEST_MODE_HEAT_COOL,
-    HVAC_MODE_HEAT: NEST_MODE_HEAT,
-    HVAC_MODE_COOL: NEST_MODE_COOL,
-    HVAC_MODE_OFF: NEST_MODE_OFF,
+    HVACMode.AUTO: NEST_MODE_HEAT_COOL,
+    HVACMode.HEAT: NEST_MODE_HEAT,
+    HVACMode.COOL: NEST_MODE_COOL,
+    HVACMode.OFF: NEST_MODE_OFF,
 }
 
 ACTION_NEST_TO_HASS = {
-    "off": CURRENT_HVAC_IDLE,
-    "heating": CURRENT_HVAC_HEAT,
-    "cooling": CURRENT_HVAC_COOL,
+    "off": HVACAction.IDLE,
+    "heating": HVACAction.HEATING,
+    "cooling": HVACAction.COOLING,
 }
 
 MODE_NEST_TO_HASS = {v: k for k, v in MODE_HASS_TO_NEST.items()}
@@ -88,12 +79,12 @@ class NestClimate(ClimateEntity):
     def __init__(self, device_id, api):
         """Initialize the thermostat."""
         self._name = "Nest Thermostat"
-        self._unit_of_measurement = TEMP_CELSIUS
+        self._unit_of_measurement = UnitOfTemperature.CELSIUS
         self._fan_modes = [FAN_ON, FAN_AUTO]
         self.device_id = device_id
 
         # Set the default supported features
-        self._support_flags = SUPPORT_TARGET_TEMPERATURE | SUPPORT_PRESET_MODE
+        self._support_flags = ClimateEntityFeature.TARGET_TEMPERATURE | ClimateEntityFeature.PRESET_MODE
 
         # Not all nest devices support cooling and heating remove unused
         self._operation_list = []
@@ -102,24 +93,24 @@ class NestClimate(ClimateEntity):
 
         if self.device.device_data[device_id]['can_heat'] \
                 and self.device.device_data[device_id]['can_cool']:
-            self._operation_list.append(HVAC_MODE_AUTO)
-            self._support_flags |= SUPPORT_TARGET_TEMPERATURE_RANGE
+            self._operation_list.append(HVACMode.AUTO)
+            self._support_flags |= ClimateEntityFeature.TARGET_TEMPERATURE_RANGE
 
         # Add supported nest thermostat features
         if self.device.device_data[device_id]['can_heat']:
-            self._operation_list.append(HVAC_MODE_HEAT)
+            self._operation_list.append(HVACMode.HEAT)
 
         if self.device.device_data[device_id]['can_cool']:
-            self._operation_list.append(HVAC_MODE_COOL)
+            self._operation_list.append(HVACMode.COOL)
 
-        self._operation_list.append(HVAC_MODE_OFF)
+        self._operation_list.append(HVACMode.OFF)
 
         # feature of device
         if self.device.device_data[device_id]['has_fan']:
-            self._support_flags = self._support_flags | SUPPORT_FAN_MODE
+            self._support_flags = self._support_flags | ClimateEntityFeature.FAN_MODE
 
         if self.device.device_data[device_id]['target_humidity_enabled']:
-            self._support_flags = self._support_flags | SUPPORT_TARGET_HUMIDITY
+            self._support_flags = self._support_flags | ClimateEntityFeature.TARGET_HUMIDITY
 
     @property
     def unique_id(self):

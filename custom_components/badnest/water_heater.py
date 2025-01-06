@@ -8,20 +8,18 @@ from homeassistant.helpers import config_validation as cv
 from homeassistant.const import (
     ATTR_ENTITY_ID,
     ATTR_TEMPERATURE,
-    TEMP_CELSIUS
+    UnitOfTemperature
 )
 from homeassistant.helpers.temperature import display_temp as show_temp
 
 from homeassistant.components.water_heater import (
     STATE_OFF,
     STATE_ON,
-    SUPPORT_OPERATION_MODE,
-    SUPPORT_AWAY_MODE,
     ATTR_AWAY_MODE,
     ATTR_CURRENT_TEMPERATURE,
     ATTR_OPERATION_MODE,
     ATTR_OPERATION_LIST,
-    SUPPORT_TARGET_TEMPERATURE
+    WaterHeaterEntityFeature
 )
 try:
     from homeassistant.components.water_heater import WaterHeaterEntity
@@ -108,7 +106,7 @@ class NestWaterHeater(WaterHeaterEntity):
         self._name = "Nest Hot Water Heater"
         self.device_id = device_id
         self.device = api
-        self._attr_temperature_unit = TEMP_CELSIUS
+        self._attr_temperature_unit = UnitOfTemperature.CELSIUS
 
     @property
     def unique_id(self):
@@ -124,9 +122,9 @@ class NestWaterHeater(WaterHeaterEntity):
     def supported_features(self):
         """Return the list of supported features."""
         if self.device.device_data[self.device_id]['heat_link_hot_water_type'] == 'opentherm':
-            SUPPORTED_FEATURES = SUPPORT_OPERATION_MODE | SUPPORT_AWAY_MODE | SUPPORT_BOOST_MODE | SUPPORT_TARGET_TEMPERATURE
+            SUPPORTED_FEATURES = WaterHeaterEntityFeature.OPERATION_MODE | WaterHeaterEntityFeature.AWAY_MODE | SUPPORT_BOOST_MODE | WaterHeaterEntityFeature.TARGET_TEMPERATURE
         else:
-            SUPPORTED_FEATURES = SUPPORT_OPERATION_MODE | SUPPORT_AWAY_MODE | SUPPORT_BOOST_MODE
+            SUPPORTED_FEATURES = WaterHeaterEntityFeature.OPERATION_MODE | WaterHeaterEntityFeature.AWAY_MODE | SUPPORT_BOOST_MODE
         return SUPPORTED_FEATURES
 
     @property
@@ -155,7 +153,7 @@ class NestWaterHeater(WaterHeaterEntity):
 
         data = {}
 
-        if supported_features & SUPPORT_OPERATION_MODE:
+        if supported_features & WaterHeaterEntityFeature.OPERATION_MODE:
             data[ATTR_OPERATION_LIST] = self.operation_list
 
         return data
@@ -168,18 +166,18 @@ class NestWaterHeater(WaterHeaterEntity):
         supported_features = self.supported_features
 
         # Operational mode will be off or schedule
-        if supported_features & SUPPORT_OPERATION_MODE:
+        if supported_features & WaterHeaterEntityFeature.OPERATION_MODE:
             data[ATTR_OPERATION_MODE] = self.current_operation
 
         # This is, is the away mode feature turned on/off
-        if supported_features & SUPPORT_AWAY_MODE:
+        if supported_features & WaterHeaterEntityFeature.AWAY_MODE:
             is_away = self.is_away_mode_on
             data[ATTR_AWAY_MODE] = STATE_ON if is_away else STATE_OFF
 
         # away_mode_active - true if away mode is active.
         # If away mode is on, and no one has been seen for 48hrs away mode
         # should go active
-        if supported_features & SUPPORT_AWAY_MODE:
+        if supported_features & WaterHeaterEntityFeature.AWAY_MODE:
             if self.device.device_data[self.device_id]['hot_water_away_active']:
                 away_active = self.device.device_data[self.device_id]['hot_water_away_active']
                 data[ATTR_AWAY_MODE_ACTIVE] = away_active
@@ -209,7 +207,7 @@ class NestWaterHeater(WaterHeaterEntity):
             data[ATTR_HEATING_ACTIVE] = False
 
 
-        if supported_features & SUPPORT_TARGET_TEMPERATURE:
+        if supported_features & WaterHeaterEntityFeature.TARGET_TEMPERATURE:
             # Set target temperature
             data[ATTR_TEMPERATURE] = show_temp(
                     self.hass,

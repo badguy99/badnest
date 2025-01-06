@@ -6,7 +6,7 @@ from datetime import timedelta
 
 from homeassistant.components.camera import (
     Camera,
-    SUPPORT_ON_OFF,
+    CameraEntityFeature,
 )
 from homeassistant.util.dt import utcnow
 
@@ -103,9 +103,9 @@ class NestCamera(Camera):
     def supported_features(self):
         """Return supported features."""
         if self.supports_doorbell_chime:
-            return SUPPORT_ON_OFF + SUPPORT_CHIME
+            return CameraEntityFeature.ON_OFF + SUPPORT_CHIME
         else:
-            return SUPPORT_ON_OFF
+            return CameraEntityFeature.ON_OFF
 
     @property
     def supports_doorbell_chime(self):
